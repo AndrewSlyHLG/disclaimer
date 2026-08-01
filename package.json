@@ -1,0 +1,15 @@
+{
+  "name": "disclaimer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "ingest": "node app.js ingest"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

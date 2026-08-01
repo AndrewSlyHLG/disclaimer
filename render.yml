@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: disclaimer
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node app.js
+    envVars:
+      # Prompted for on deploy. Free, no card: console.groq.com
+      # Without it the app still listens and recognises repeat airings, but it
+      # can't name a sponsor it hasn't heard before.
+      - key: GROQ_API_KEY
+        sync: false
