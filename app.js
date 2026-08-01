@@ -1343,7 +1343,7 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
 
 // Bump on every build. Visiting /version tells you instantly which code is
 // actually running, instead of inferring it from the UI.
-const BUILD = 'v7-records';
+const BUILD = 'v8-fixed';
 
 const TAG_HASHES = 1;
 const TAG_PCM = 2;
@@ -1366,17 +1366,14 @@ const server = http.createServer((req, res) => {
     }, null, 2));
     return;
   }
-  const rel = req.url === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0]);
-  const file = path.join(PUBLIC, path.normalize(rel).replace(/^(\.\.[/\\])+/, ''));
-  if (!file.startsWith(PUBLIC) || !fs.existsSync(file)) {
-    res.writeHead(404).end('Not found');
-    return;
-  }
+  const name = req.url === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0]).replace(/^\//, '');
+  const body = ASSETS[name];
+  if (body === undefined) { res.writeHead(404).end('Not found'); return; }
   res.writeHead(200, {
-    'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
-    'Cache-Control': 'no-store',
+    'Content-Type': MIME[path.extname(name)] || 'application/octet-stream',
+    'Cache-Control': 'no-cache',
   });
-  fs.createReadStream(file).pipe(res);
+  res.end(body);
 });
 
 /* ── session ───────────────────────────────────────────────── */
