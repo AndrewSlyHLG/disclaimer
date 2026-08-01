@@ -1341,23 +1341,42 @@ function loadIndex(file) {
 const PORT = process.env.PORT || 3000;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 
+// Bump on every build. Visiting /version tells you instantly which code is
+// actually running, instead of inferring it from the UI.
+const BUILD = 'v7-records';
+
 const TAG_HASHES = 1;
 const TAG_PCM = 2;
 
 const index = loadIndex(process.env.INDEX_FILE || 'corpus/index.json');
 const pool = new UnknownPool(index);
+const STARTED = Date.now();
 const sttAvailable = Boolean(process.env.DEEPGRAM_API_KEY || process.env.GROQ_API_KEY);
 
 /* ── static ────────────────────────────────────────────────── */
 const server = http.createServer((req, res) => {
-  const name = req.url === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0]).replace(/^\//, '');
-  const body = ASSETS[name];
-  if (body === undefined) { res.writeHead(404).end('Not found'); return; }
+  if (req.url === '/version') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({
+      build: BUILD,
+      transcription: Boolean(process.env.GROQ_API_KEY || process.env.DEEPGRAM_API_KEY),
+      model: hasModel(),
+      fecAndCongress: Boolean(process.env.FEC_API_KEY),
+      startedAt: new Date(STARTED).toISOString(),
+    }, null, 2));
+    return;
+  }
+  const rel = req.url === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0]);
+  const file = path.join(PUBLIC, path.normalize(rel).replace(/^(\.\.[/\\])+/, ''));
+  if (!file.startsWith(PUBLIC) || !fs.existsSync(file)) {
+    res.writeHead(404).end('Not found');
+    return;
+  }
   res.writeHead(200, {
-    'Content-Type': MIME[path.extname(name)] || 'application/octet-stream',
-    'Cache-Control': 'no-cache',
+    'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
+    'Cache-Control': 'no-store',
   });
-  res.end(body);
+  fs.createReadStream(file).pipe(res);
 });
 
 /* ── session ───────────────────────────────────────────────── */
